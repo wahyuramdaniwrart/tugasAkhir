@@ -89,18 +89,21 @@ void loop() {
   if (currentMillis - lastUpdateTime >= displayUpdateInterval) {
     lastUpdateTime = currentMillis;
     displayData();
-  }
 
-  // Simpan data ke SD card jika tombol ditekan
-  if (sdReady && digitalRead(RECORD_PIN) == LOW) {
-    if (!headerWritten) {
-      writeHeader();
-      headerWritten = true;
+    // Simpan data ke SD card jika tombol ditekan
+    if (sdReady && digitalRead(RECORD_PIN) == LOW) {
+      if (!headerWritten) {
+        writeHeader();
+        headerWritten = true;
+        tft.fillRectangle(0, 120, tft.maxX(), 130, COLOR_YELLOW);
+      }
+      saveDataToSD();
+        tft.fillRectangle(0, 120, tft.maxX(), 130, COLOR_GREEN);
+    } else {
+      sdReady = checkSdCard();
+      headerWritten = false;
+        tft.fillRectangle(0, 120, tft.maxX(), 130, COLOR_RED);
     }
-    saveDataToSD();
-  } else {
-    sdReady = checkSdCard();
-    headerWritten = false;
   }
 }
 
@@ -111,7 +114,10 @@ void saveDataToSD() {
     dataFile.print(dcVoltage, 2); dataFile.print(", ");
     dataFile.print(acCurrent, 2); dataFile.print(", ");
     dataFile.println(dcCurrent, 2);
+    dataFile.flush();
     dataFile.close();
+  } else {
+    Serial.print("gagal menulis data");
   }
 }
 
@@ -119,7 +125,11 @@ void writeHeader() {
   dataFile = SD.open("data.CSV", FILE_WRITE);
   if (dataFile) {
     dataFile.println("AC Voltage (V), DC Voltage (V), AC Current (A), DC Current (A)");
+    
+    dataFile.flush();
     dataFile.close();
+  } else {
+    Serial.print("gagal menulis header");
   }
 }
 
@@ -134,6 +144,7 @@ void displayData() {
   tft.drawText(120, 10, "V DC", COLOR_GRAY);
   tft.drawText(20, 50, "A AC", COLOR_GRAY);
   tft.drawText(120, 50, "A DC", COLOR_GRAY);
+  tft.drawText(45, 110, "STATUS REKAM DATA", COLOR_WHITE);
 
   tft.setFont(Trebuchet_MS16x21);
 
@@ -168,22 +179,6 @@ void displayData() {
   tft.drawText(40, tft.maxY() - 25, "WAHYU RAMDANI");
 }
 
-// float teganganAc() {
-//   digitalWrite(GND3, LOW);
-//   digitalWrite(GND4, LOW);
-
-//   float maxVoltage = 0.0;
-//     float adc = (ads.readADC_Differential_2_3() * multiplier) * 1001;
-//     // maxVoltage = max(maxVoltage, adc);
-
-//     // if (adc > maxVoltage) {
-//     //         maxVoltage = adc;
-//     //     }
-//     // maxVoltage = emwaVoltAc.filter(maxVoltage);
-
-//   // return max(0.0, (0.0061 * maxVoltage * maxVoltage) + (0.5942 * maxVoltage) - 9.5626);
-//   return adc;
-// }
 float teganganAc() {
   digitalWrite(GND3, LOW);
   digitalWrite(GND4, LOW);
