@@ -20,17 +20,17 @@ Selamat datang di arsip project tugas akhir saya, Kode yang ada pada dile ini me
 8. Resistor 1M, 1K, 10K
 9. Capacitor 10 mF, 100 mF
 
-## Contributing
-We welcome any and all contributions! Here are some ways you can get started:
-1. Report bugs: If you encounter any bugs, please let us know. Open up an issue and let us know the problem.
-2. Contribute code: If you are a developer and want to contribute, follow the instructions below to get started!
-3. Suggestions: If you don't want to code but have some awesome ideas, open up an issue explaining some updates or imporvements you would like to see!
-4. Documentation: If you see the need for some additional documentation, feel free to add some!
+## Kontribusi
+Kami menyambut semua kontribusi! Berikut ini beberapa cara untuk memulai:
+1. Laporkan bug: Jika Anda menemukan bug, harap beri tahu kami. Ajukan masalah dan beri tahu kami masalahnya.
+2. Kontribusikan kode: Jika Anda seorang pengembang dan ingin berkontribusi, ikuti petunjuk di bawah ini untuk memulai!
+3. Saran: Jika Anda tidak ingin membuat kode tetapi memiliki beberapa ide hebat, ajukan masalah yang menjelaskan beberapa pembaruan atau peningkatan yang ingin Anda lihat!
+4. Dokumentasi: Jika Anda merasa perlu beberapa dokumentasi tambahan, silakan tambahkan!
 
-## Instructions
-1. Fork this repository
-2. Clone the forked repository
-3. Add your contributions (code or documentation)
-4. Commit and push
-5. Wait for pull request to be merged
+## Instruksi
+1. Fork repositori ini
+2. Kloning repositori yang di-fork
+3. Tambahkan kontribusi Anda (kode atau dokumentasi)
+4. Komit dan dorong
+5. Tunggu permintaan penarikan digabungkan
 
