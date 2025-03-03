@@ -2,10 +2,12 @@
 ![Stars](https://img.shields.io/badge/stars-13-yellow)
 # tugasAkhir
 
+![Skema Alat](Image/alat-ukur.jpg)
+
 ## Description
 Selamat datang di arsip project tugas akhir saya, Kode yang ada pada dile ini merupakan project untuk tugas akhir saya, memiliki fungsi untuk merekam nilai arus dan tegangan ac maupun dc dari mobil listrik milik Fakultas Teknik Universitas Mataram, tegangan ac yang diukur adalah tegangan SPWM yang keluar dari controller mobil listrik. alat ukur ini terkalibrasi dengan power meter Fluke PQ 345 Clamp Meter.
 
-![Skema Alat](Image/alat-ukur.jpg)
+![Skema Alat](Image/skema-alat-ukur.jpg)
 
 ## Komponen
 1. Arduino Nano
