@@ -1,10 +1,11 @@
+#include <QuickStats.h>
+#include <arduinoFFT.h>
 #include <Ewma.h>
 #include <EwmaT.h>
 #include <Adafruit_ADS1X15.h>
 #include <TFT_22_ILI9225.h>
 #include <SPI.h>
 #include <Wire.h>
-#include <EmonLib.h>
 #include <SD.h>
 
 #define TFT_RST 8
@@ -25,9 +26,6 @@ TFT_22_ILI9225 tft(TFT_RST, TFT_RS, TFT_CS, TFT_LED, TFT_BRIGHTNESS);
 
 EnergyMonitor emon1;
 Adafruit_ADS1115 ads;
-Ewma emwaArusAc(0.7);
-Ewma emwaVoltDc(0.5);
-Ewma emwaVoltAc(0.2);
 
 const float R1 = 220000.0, R2 = 10000.0;
 const float voltageMultiplier = (R1 + R2) / R2;
@@ -51,6 +49,17 @@ const unsigned long displayUpdateInterval = 100; // Interval pembaruan tampilan 
 float prevAcVoltage = -9999, prevDcVoltage = -9999;
 float prevAcCurrent = -9999, prevDcCurrent = -9999;
 
+QuickStats statsAc; //initialize an instance of this class
+QuickStats statsDc; //initialize an instance of this class
+QuickStats statsADc; //initialize an instance of this class
+#define NUM_READINGSAc 5  // Jumlah sampel untuk statistik
+#define NUM_READINGSDc 10  // Jumlah sampel untuk statistik
+#define NUM_READINGSADc 10  // Jumlah sampel untuk statistik
+float adcReadingsAc[NUM_READINGSAc];  // Array untuk menyimpan hasil ADC
+float adcReadingsDc[NUM_READINGSDc];  // Array untuk menyimpan hasil ADC
+float adcReadingsADc[NUM_READINGSADc];  // Array untuk menyimpan hasil ADC
+
+
 void setup() {
   Serial.begin(115200);
   analogReference(DEFAULT);
@@ -61,11 +70,11 @@ void setup() {
   emon1.current(SCT_PIN, 108.225);
 
   tft.begin();
+  tft.clear();
   tft.setOrientation(1);
   tft.setBacklight(true);
   tft.setFont(Terminal6x8);
   tft.setBackgroundColor(COLOR_BLACK);
-  tft.clear();
 
   sdReady = SD.begin(SD_CS);
   pinMode(GND3, OUTPUT);
@@ -150,25 +159,25 @@ void displayData() {
 
   // Perbarui hanya jika nilai berubah
   if (acVoltage != prevAcVoltage) {
-    tft.drawText(20, 20, "       ", COLOR_BLACK);  // Hapus angka lama
+    tft.drawText(20, 20, "        ", COLOR_BLACK);  // Hapus angka lama
     tft.drawText(20, 20, String(acVoltage, 2).c_str(), COLOR_WHITE);  // Tampilkan angka baru
     prevAcVoltage = acVoltage;  // Simpan nilai terbaru
   }
 
   if (dcVoltage != prevDcVoltage) {
-    tft.drawText(120, 20, "       ", COLOR_BLACK);
+    tft.drawText(120, 20, "        ", COLOR_BLACK);
     tft.drawText(120, 20, String(dcVoltage, 2).c_str(), COLOR_WHITE);
     prevDcVoltage = dcVoltage;
   }
 
   if (acCurrent != prevAcCurrent) {
-    tft.drawText(20, 60, "       ", COLOR_BLACK);
+    tft.drawText(20, 60, "        ", COLOR_BLACK);
     tft.drawText(20, 60, String(acCurrent, 2).c_str(), COLOR_WHITE);
     prevAcCurrent = acCurrent;
   }
 
   if (dcCurrent != prevDcCurrent) {
-    tft.drawText(120, 60, "       ", COLOR_BLACK);
+    tft.drawText(120, 60, "        ", COLOR_BLACK);
     tft.drawText(120, 60, String(dcCurrent, 2).c_str(), COLOR_WHITE);
     prevDcCurrent = dcCurrent;
   }
@@ -183,39 +192,70 @@ float teganganAc() {
   digitalWrite(GND3, LOW);
   digitalWrite(GND4, LOW);
 
-  float maxVoltage = 0.0;
-  unsigned long startTime = micros();
-  while (micros() - startTime < 100) { // 2ms sampling
-    float adc = ads.readADC_Differential_2_3() * multiplier;
-    // maxVoltage = max(maxVoltage, adc);
-
-    if (adc > maxVoltage) {
-            maxVoltage = adc;
-        }
-    maxVoltage = emwaVoltAc.filter(maxVoltage);
-
+  // Mengisi array dengan hasil pembacaan ADC
+  for (int i = 0; i < NUM_READINGSAc; i++) {
+    adcReadingsAc[i] = ads.readADC_Differential_2_3();
   }
-  return max(0.0, (0.0138 * maxVoltage * maxVoltage) + (0.4179 * maxVoltage) - 10.3);
-  // return maxVoltage;
+
+  // Mencari nilai maksimum dari pembacaan
+  float adcMax = statsAc.maximum(adcReadingsAc, NUM_READINGSAc);
+
+  // Konversi ke tegangan RMS
+  float voltage = (adcMax * multiplier) / sqrt(2);
+  float voltageCalb = ((0.0374 *voltage * voltage ) - (1.1304 * voltage) - 0.0294);
+
+  if( voltageCalb < 0.00) {
+      voltageCalb = 0.00;
+  }
+
+  return voltageCalb;
 }
 
+
 float teganganDc() {
-  float voltageDc = (analogRead(A0) * (5.0 / 1023.0) * voltageMultiplier) + 5.47;
-  return emwaVoltDc.filter(max(0.0, voltageDc));
+
+  // Mengisi array dengan hasil pembacaan ADC
+  for (int i = 0; i < NUM_READINGSDc; i++) {
+    adcReadingsDc[i] = analogRead(A0) ;
+  }
+
+  // Mencari nilai maksimum dari pembDcaan
+  float voltageCalb = statsDc.maximum(adcReadingsDc, NUM_READINGSDc);
+  voltageCalb = voltageCalb * (5.0 / 1023.0) * voltageMultiplier + 3.55;
+
+  if(voltageCalb > 80.00) {
+    voltageCalb = 80.00;
+  }
+  
+  return voltageCalb;
 }
 
 double arusAc() {
-  float arusAc = max(emon1.calcIrms(750), 0.0);
-  float calibArusAc = arusAc - 0.8;
+  float arusAc = emon1.calcIrms(750);
+  float regresi = ((-0.0004 *arusAc * arusAc ) + (0.9066 * arusAc) - 0.299) - 1.5;  //y = 1,4903x - 36,511
 
-  if(calibArusAc < 0.00) {
-    calibArusAc = 0.00;
+  if(regresi < 0.00) {
+    regresi = 0.00;
   }
 
-  return emwaArusAc.filter(calibArusAc);
+  return regresi;
 }
 
 float arusDc() {
-  float vShunt = ads.readADC_Differential_0_1() * multiplier;
-  return max(0.0, (vShunt / rShunt) - 1.2);
+  
+
+    // Mengisi array dengan hasil pembacaan ADC
+  for (int i = 0; i < NUM_READINGSADc; i++) {
+    adcReadingsADc[i] = ads.readADC_Differential_0_1();
+  }
+
+  float voltageShunt = statsADc.maximum(adcReadingsADc, NUM_READINGSADc);
+  float vShunt = voltageShunt * multiplier;
+  vShunt = vShunt / rShunt - 1.2 ;
+
+  if(vShunt < 0.00) {
+    vShunt = 0.00;
+  }
+
+  return vShunt;
 }
