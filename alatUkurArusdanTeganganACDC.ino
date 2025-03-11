@@ -1,3 +1,4 @@
+#include <EmonLib.h>
 #include <QuickStats.h>
 #include <arduinoFFT.h>
 #include <Ewma.h>
